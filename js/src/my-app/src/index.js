@@ -95,7 +95,7 @@ import { getElementError } from '@testing-library/dom';
 
 
 
-import { Layout, Menu, Breadcrumb, Image, Select, Space } from 'antd';
+import { Layout, Menu, Breadcrumb, Image, Select, Space, Typography, Card } from 'antd';
 import {
   DownOutlined,
   DesktopOutlined,
@@ -105,12 +105,14 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 
-const {Option} = Select;
 
+const {Option} = Select;
+const{Text, Title} = Typography;
 
 const { Header, Content, Footer, Sider } = Layout;
 const { SubMenu } = Menu;
 
+// 侧边栏
 class SiderDemo extends React.Component {
   state = {
     collapsed: false,
@@ -216,6 +218,7 @@ class MyContent extends React.Component{
   // 获取图片以及返回
 
   render(){
+    // 页面1, 返回识别结果以及原始图片
     if(this.props.location === 0){
       return(
         <Layout className="site-layout">
@@ -228,7 +231,7 @@ class MyContent extends React.Component{
         </Layout>
       )
     }
-
+    // 页面2, 返回设备信息: 历史结果 设备详细信息 最后一次发送数据的时间 设备支持的协议
     if(this.props.location === 1){
       return(
         <Layout className="site-layout">
@@ -236,7 +239,8 @@ class MyContent extends React.Component{
          <Content style={{ margin: '0 16px' }}>
           <p></p>
           <h1 style={{textAlign:'center', fontSize:'24px'}}>设备信息</h1>
-
+          <p></p>
+          <DeviceInfo></DeviceInfo>
          </Content>
          
          <Footer style={{ textAlign: 'center' }}>Ant Design ©2018 Created by Ant UED</Footer>
@@ -247,7 +251,8 @@ class MyContent extends React.Component{
 }
 
 
-class My extends React.Component{                              //myMenu是菜单, mycontent是页面, 下拉菜单放在content里面
+
+class My extends React.Component{                              //myMenu是菜单, mycontent是页面, 下拉菜单放在content里面, 两者的父类, 提升state的作用域
   constructor(props){
     super(props);
     this.state = {location:0};
@@ -272,11 +277,12 @@ class My extends React.Component{                              //myMenu是菜单
 }
 
 
-
+// 获取图片并展示 
 class Test extends React.Component{
   constructor(props){
     super(props);
-    this.state = {deviceName:[],pic:[],index:1, result:[]};
+    // deviceName返回的设备名称, pic 图片名称, index 选择展示的设备的下标
+    this.state = {deviceName:[],pic:[],index:0, result:[]}; 
     this.handleClick = this.handleClick.bind(this);
   }
 
@@ -305,7 +311,7 @@ class Test extends React.Component{
       <Space direction="vertical" style={{margin:'50px'}}>
       {/* 选择设备, 需要设置一个state来变化图片 */}
       <p></p>
-      <h3>请选择展示的设备：</h3>
+      <Title level={3}>请选择展示的设备：</Title>
       <Select defaultValue="选择设备" style={{ width: 120 }} onChange={this.handleClick}>           
         {this.state.deviceName.map((x)=>{
           //<Menu.Item> {x} </Menu.Item>
@@ -314,18 +320,77 @@ class Test extends React.Component{
       </Select>
       <p></p>
       {/* 展示图片 */}
-      <h3>设备{this.state.deviceName[this.state.index]}图片如下</h3>                         
+      <Title level={3}>设备{this.state.deviceName[this.state.index]}图片如下</Title>                         
       <p></p>
       <Image width={200} src={'data:image/jpeg;base64,' + this.state.pic[this.state.index]}/>
       <p></p>
 
       <p></p>
-      <h2>识别结果为：</h2>
-      <p style={{marginLeft:'50px', fontSize:'30px'}}> {this.state.result[this.state.index]}</p>
+      <Title level={3}>识别结果为：</Title>
+      <Text keyboard style={{fontSize:'22px', marginLeft:'30px'}}>{this.state.result[this.state.index]}</Text>
       </Space>
     )
   }
 }
+
+
+class DeviceInfo extends React.Component{
+  constructor(props){
+    super(props);
+    this.state = {deviceName:[], info:[[]], index:0};
+    this.handleClick = this.handleClick.bind(this);
+  }
+  componentDidMount(){                             //定时器
+    this.timerID = setInterval(()=>this.tick(),1000);
+  }
+
+  componentWillUnmount(){
+    clearInterval(this.timerID);
+  }
+
+  tick(){                                          //通过get获取从后端获取数据
+    console.log("using the tick");
+    fetch("http://localhost:8080/spring1/test/info").then((response)=>response.json()).then((response)=>{
+      this.setState({deviceName:response.deviceName, info:response.info})
+    });
+  }
+
+  handleClick(value) {
+    this.setState({index:this.state.deviceName.indexOf(value)});
+    this.state.info[0].map((x)=>{console.log(x)});
+  }
+
+  render(){
+    return(
+      <Space direction="vertical" style={{margin:'50px'}}>
+      <Title level={3}>选择要展示的设备</Title>
+      <Select defaultValue="选择设备" style={{ width: 120 }} onChange={this.handleClick}>           
+      {this.state.deviceName.map((x)=>{
+        //<Menu.Item> {x} </Menu.Item>
+        return(<Option key={x} value={x} >{x}</Option>)
+      })}
+    </Select>
+    <div className="site-card-border-less-wrapper">
+      <Card title={this.state.deviceName[this.state.index]+"所支持的协议"} bordered={false} style={{ width: 300 }}>
+        {this.state.info[this.state.index].map((x)=>{
+          return(<Text keyboard>{x}</Text>)
+        })}
+      </Card>
+    </div>
+
+    <Title level={3}>设备识别结果历史数据</Title>
+    <p>展示最近50条</p>
+    <Title level={3}>最后一次发送数据的时间</Title>
+
+    </Space>
+    )
+  }
+
+
+
+
+}
+
 
 
 ReactDOM.render(<My />, document.getElementById('root'));
